@@ -3,9 +3,12 @@ package main
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
 	"log"
+	"os"
 )
 
 type TemplateProcessor struct {
@@ -13,6 +16,7 @@ type TemplateProcessor struct {
 	namespace  string
 	secrets    map[string]*Secret
 	templates  map[string]*ConfigMap
+	noop       bool
 }
 
 func NewTemplateProcessor(namespace string) *TemplateProcessor {
@@ -22,6 +26,10 @@ func NewTemplateProcessor(namespace string) *TemplateProcessor {
 		secrets:    make(map[string]*Secret),
 		templates:  make(map[string]*ConfigMap),
 	}
+}
+
+func (tp *TemplateProcessor) setNoop(noop bool) {
+	tp.noop = noop
 }
 
 func (tp *TemplateProcessor) configmap(name, key string) (string, error) {
@@ -68,46 +76,68 @@ func (tp *TemplateProcessor) secret(name, key string) (string, error) {
 	return string(d), nil
 }
 
-func (tp *TemplateProcessor) sync() {
+func (tp *TemplateProcessor) sync(name string) error {
+	cm, err := getConfigMap(tp.namespace, name)
+	if err != nil {
+		return err
+	}
+
+	return tp.processConfigMapTemplate(cm)
+}
+
+func (tp *TemplateProcessor) syncAll() {
 	configmaps, err := getConfigMaps(tp.namespace)
 	if err != nil {
 		log.Println(err)
+		return
 	}
 
 	for _, configmap := range configmaps.Items {
-		ts, ok := configmap.Data["template"]
-		if !ok {
-			log.Println("missing template key")
-			continue
-		}
-
-		t := template.New(configmap.Metadata.Name)
-		t.Funcs(template.FuncMap{
-			"configmap": tp.configmap,
-			"secret":    tp.secret,
-		})
-
-		t, err := t.Parse(ts)
-		if err != nil {
-			log.Println("error parsing template: %v", err)
-			continue
-		}
-
-		var value bytes.Buffer
-		err = t.Execute(&value, nil)
-		if err != nil {
-			log.Println("error executing template: %v", err)
-			continue
-		}
-
-		annotations := configmap.Metadata.Annotations
-		name := annotations["konfd.io/name"]
-		key := annotations["konfd.io/key"]
-
-		err = createConfigMap(tp.namespace, name, key, value.String())
-		if err != nil {
+		if err := tp.processConfigMapTemplate(&configmap); err != nil {
 			log.Println(err)
 			continue
 		}
 	}
+}
+
+func (tp *TemplateProcessor) processConfigMapTemplate(configmap *ConfigMap) error {
+	ts, ok := configmap.Data["template"]
+	if !ok {
+		return errors.New("missing template key")
+	}
+
+	t := template.New(configmap.Metadata.Name)
+	t.Funcs(template.FuncMap{
+		"configmap": tp.configmap,
+		"secret":    tp.secret,
+	})
+
+	t, err := t.Parse(ts)
+	if err != nil {
+		return fmt.Errorf("error parsing template: %v", err)
+	}
+
+	var value bytes.Buffer
+	err = t.Execute(&value, nil)
+	if err != nil {
+		return fmt.Errorf("error executing template: %v", err)
+	}
+
+	annotations := configmap.Metadata.Annotations
+	name := annotations["konfd.io/name"]
+	key := annotations["konfd.io/key"]
+
+	c := newConfigMap(tp.namespace, name, key, value.String())
+
+	if tp.noop {
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ")
+		err := encoder.Encode(&c)
+		if err != nil {
+			return fmt.Errorf("error encoding configmap %s: %v", name, err)
+		}
+		return nil
+	}
+
+	return createConfigMap(c)
 }

@@ -122,8 +122,8 @@ func getConfigMaps(namespace string) (*ConfigMapList, error) {
 	return &cl, nil
 }
 
-func createConfigMap(namespace, name, key, value string) error {
-	c := ConfigMap{
+func newConfigMap(namespace, name, key, value string) *ConfigMap {
+	c := &ConfigMap{
 		ApiVersion: "v1",
 		Data:       make(map[string]string),
 		Kind:       "ConfigMap",
@@ -133,21 +133,24 @@ func createConfigMap(namespace, name, key, value string) error {
 		},
 	}
 	c.Data[key] = value
+	return c
+}
 
+func createConfigMap(c *ConfigMap) error {
 	body, err := json.MarshalIndent(&c, "", "  ")
 	if err != nil {
-		return fmt.Errorf("error encoding configmap %s: %v", name, err)
+		return fmt.Errorf("error encoding configmap %s: %v", c.Metadata.Name, err)
 	}
 
-	u := fmt.Sprintf("http://127.0.0.1:8001/api/v1/namespaces/%s/configmaps", namespace)
+	u := fmt.Sprintf("http://127.0.0.1:8001/api/v1/namespaces/%s/configmaps", c.Metadata.Namespace)
 	resp, err := http.Post(u, "", bytes.NewReader(body))
 	if err != nil {
-		return fmt.Errorf("error creating configmap %s: %v", name, err)
+		return fmt.Errorf("error creating configmap %s: %v", c.Metadata.Name, err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 201 {
-		return fmt.Errorf("error creating configmap %s; got HTTP %v status code", name, resp.StatusCode)
+		return fmt.Errorf("error creating configmap %s; got HTTP %v status code", c.Metadata.Name, resp.StatusCode)
 	}
 
 	return nil
