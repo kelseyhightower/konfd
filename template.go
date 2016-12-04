@@ -92,7 +92,6 @@ func (tp *TemplateProcessor) sync(name string) error {
 	if err != nil {
 		return err
 	}
-
 	return tp.processConfigMapTemplate(cm)
 }
 
@@ -137,33 +136,75 @@ func (tp *TemplateProcessor) processConfigMapTemplate(configmap *ConfigMap) erro
 	annotations := configmap.Metadata.Annotations
 	name := annotations["konfd.io/name"]
 	key := annotations["konfd.io/key"]
+	kind := annotations["konfd.io/kind"]
 
-	c := newConfigMap(tp.namespace, name, key, value.String())
-
-	if tp.noop {
-		encoder := json.NewEncoder(os.Stdout)
-		encoder.SetIndent("", "  ")
-		err := encoder.Encode(&c)
-		if err != nil {
-			return fmt.Errorf("error encoding configmap %s: %v", name, err)
-		}
-		return nil
+	switch kind {
+	case "configmap":
+		return tp.processConfigMap(tp.namespace, name, key, value.String())
+	case "secret":
+		return tp.processSecret(tp.namespace, name, key, value.String())
 	}
+	return nil
+}
 
-	oldConfigMap, err := getConfigMap(tp.namespace, name)
+func (tp *TemplateProcessor) processConfigMap(namespace, name, key, value string) error {
+	cm := newConfigMap(namespace, name, key, value)
+
+	ccm, err := getConfigMap(namespace, name)
 	if err == ErrNotExist {
-		return createConfigMap(c)
+		if tp.noop {
+			return printObject(cm)
+		}
+		return createConfigMap(cm)
 	}
 
 	if err != nil {
 		return err
 	}
 
-	if oldConfigMap.Data[key] != c.Data[key] {
+	if ccm.Data[key] != cm.Data[key] {
 		log.Printf("%s configmap out of sync; syncing...", name)
-		oldConfigMap.Data[key] = c.Data[key]
-		return updateConfigMap(oldConfigMap)
+		ccm.Data[key] = cm.Data[key]
 	}
 
+	if tp.noop {
+		return printObject(ccm)
+	}
+	return updateConfigMap(ccm)
+}
+
+func (tp *TemplateProcessor) processSecret(namespace, name, key, value string) error {
+	s := newSecret(namespace, name, key, value)
+
+	currentSecret, err := getSecret(namespace, name)
+	if err == ErrNotExist {
+		if tp.noop {
+			return printObject(s)
+		}
+		return createSecret(s)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if currentSecret.Data[key] != s.Data[key] {
+		log.Printf("%s secret out of sync; syncing...", name)
+		currentSecret.Data[key] = s.Data[key]
+	}
+
+	if tp.noop {
+		return printObject(currentSecret)
+	}
+	return updateSecret(currentSecret)
+}
+
+func printObject(v interface{}) error {
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetIndent("", "  ")
+	err := encoder.Encode(&v)
+	if err != nil {
+		return fmt.Errorf("error encoding object: %v", err)
+	}
 	return nil
 }

@@ -13,6 +13,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -48,6 +49,7 @@ type SecretList struct {
 type Secret struct {
 	ApiVersion string            `json:"apiVersion"`
 	Data       map[string]string `json:"data"`
+	StringData map[string]string `json:"stringData,omitempty"`
 	Kind       string            `json:"kind"`
 	Metadata   Metadata          `json:"metadata"`
 	Type       string            `json:"type"`
@@ -157,6 +159,21 @@ func newConfigMap(namespace, name, key, value string) *ConfigMap {
 	return c
 }
 
+func newSecret(namespace, name, key, value string) *Secret {
+	s := &Secret{
+		ApiVersion: "v1",
+		Data:       make(map[string]string),
+		Kind:       "Secret",
+		Metadata: Metadata{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Type: "Opaque",
+	}
+	s.Data[key] = base64.StdEncoding.EncodeToString([]byte(value))
+	return s
+}
+
 func createConfigMap(c *ConfigMap) error {
 	body, err := json.MarshalIndent(&c, "", "  ")
 	if err != nil {
@@ -172,6 +189,26 @@ func createConfigMap(c *ConfigMap) error {
 
 	if resp.StatusCode != 201 {
 		return fmt.Errorf("error creating configmap %s; got HTTP %v status code", c.Metadata.Name, resp.StatusCode)
+	}
+
+	return nil
+}
+
+func createSecret(s *Secret) error {
+	body, err := json.MarshalIndent(&s, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error encoding secret %s: %v", s.Metadata.Name, err)
+	}
+
+	u := fmt.Sprintf("http://127.0.0.1:8001/api/v1/namespaces/%s/secrets", s.Metadata.Namespace)
+	resp, err := http.Post(u, "", bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("error creating secrets %s: %v", s.Metadata.Name, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 201 {
+		return fmt.Errorf("error creating secrets %s; got HTTP %v status code", s.Metadata.Name, resp.StatusCode)
 	}
 
 	return nil
@@ -197,6 +234,31 @@ func updateConfigMap(c *ConfigMap) error {
 
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("error updating configmap %s; got HTTP %v status code", c.Metadata.Name, resp.StatusCode)
+	}
+
+	return nil
+}
+
+func updateSecret(s *Secret) error {
+	body, err := json.MarshalIndent(&s, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error encoding secret %s: %v", s.Metadata.Name, err)
+	}
+
+	u := fmt.Sprintf("http://127.0.0.1:8001/api/v1/namespaces/%s/secrets/%s", s.Metadata.Namespace, s.Metadata.Name)
+	request, err := http.NewRequest(http.MethodPut, u, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("error updating secret %s: %v", s.Metadata.Name, err)
+	}
+
+	resp, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return fmt.Errorf("error updating secret %s: %v", s.Metadata.Name, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("error updating secret %s; got HTTP %v status code", s.Metadata.Name, resp.StatusCode)
 	}
 
 	return nil
