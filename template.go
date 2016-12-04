@@ -2,11 +2,7 @@ package main
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"io/ioutil"
-	"net/http"
 )
 
 type TemplateProcessor struct {
@@ -40,34 +36,19 @@ func (t *TemplateProcessor) configmap(name, key string) (string, error) {
 func (t *TemplateProcessor) secret(name, key string) (string, error) {
 	_, ok := t.secrets[name]
 	if !ok {
-		u := fmt.Sprintf("http://127.0.0.1:8001/api/v1/namespaces/%s/secrets/%s", t.namespace, name)
-		resp, err := http.Get(u)
+		s, err := getSecret(t.namespace, name)
 		if err != nil {
 			return "", err
 		}
-
-		if resp.StatusCode != 200 {
-			return "", errors.New("non 200 response code")
-		}
-
-		data, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return "", err
-		}
-		resp.Body.Close()
-
-		var s Secret
-		err = json.Unmarshal(data, &s)
-		if err != nil {
-			return "", err
-		}
-		t.secrets[name] = &s
+		t.secrets[name] = s
 	}
-	value, ok := t.secrets[name].Data[key]
+
+	v, ok := t.secrets[name].Data[key]
 	if !ok {
 		return "", errors.New("missing key " + key)
 	}
-	d, err := base64.StdEncoding.DecodeString(value)
+
+	d, err := base64.StdEncoding.DecodeString(v)
 	if err != nil {
 		return "", err
 	}

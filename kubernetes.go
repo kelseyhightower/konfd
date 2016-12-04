@@ -71,6 +71,32 @@ func getConfigMap(namespace, name string) (*ConfigMap, error) {
 	return &cm, nil
 }
 
+func getSecret(namespace, name string) (*Secret, error) {
+	u := fmt.Sprintf("http://127.0.0.1:8001/api/v1/namespaces/%s/secrets/%s", namespace, name)
+	resp, err := http.Get(u)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != 200 {
+		return nil, errors.New("non 200 response code")
+	}
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
+
+	var s Secret
+	err = json.Unmarshal(data, &s)
+	if err != nil {
+		return nil, err
+	}
+
+	return &s, nil
+}
+
 func getConfigMaps(namespace string) (*ConfigMapList, error) {
 	u := fmt.Sprintf("http://127.0.0.1:8001/api/v1/namespaces/%s/configmaps?labelSelector=konfd.io/template=true",
 		namespace)
