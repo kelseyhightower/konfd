@@ -30,9 +30,9 @@ func main() {
 			t := template.New(configmap.Metadata.Name)
 			tp := &TemplateProcessor{
 				namespace:  namespaceName,
-				configMaps: make(map[string]ConfigMap),
-				secrets:    make(map[string]Secret),
-				templates:  make(map[string]ConfigMap),
+				configMaps: make(map[string]*ConfigMap),
+				secrets:    make(map[string]*Secret),
+				templates:  make(map[string]*ConfigMap),
 			}
 
 			t.Funcs(template.FuncMap{

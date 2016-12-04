@@ -10,44 +10,31 @@ import (
 )
 
 type TemplateProcessor struct {
-	configMaps map[string]ConfigMap
+	configMaps map[string]*ConfigMap
 	namespace  string
-	secrets    map[string]Secret
-	templates  map[string]ConfigMap
+	secrets    map[string]*Secret
+	templates  map[string]*ConfigMap
 }
 
 func (t *TemplateProcessor) configmap(name, key string) (string, error) {
+	// Check if the config map has already been fetched for this
+	// namespace. If not, retrieve the config map and cached it for
+	// future use.
 	_, ok := t.configMaps[name]
 	if !ok {
-		u := fmt.Sprintf("http://127.0.0.1:8001/api/v1/namespaces/%s/configmaps/%s", t.namespace, name)
-		resp, err := http.Get(u)
-		if err != nil {
-			return "", err
-		}
-
-		if resp.StatusCode != 200 {
-			return "", errors.New("non 200 response code")
-		}
-
-		data, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return "", err
-		}
-		resp.Body.Close()
-
-		var cm ConfigMap
-		err = json.Unmarshal(data, &cm)
+		cm, err := getConfigMap(t.namespace, name)
 		if err != nil {
 			return "", err
 		}
 		t.configMaps[name] = cm
 	}
-	value, ok := t.configMaps[name].Data[key]
+
+	v, ok := t.configMaps[name].Data[key]
 	if !ok {
 		return "", errors.New("missing key " + key)
 	}
 
-	return value, nil
+	return v, nil
 }
 
 func (t *TemplateProcessor) secret(name, key string) (string, error) {
@@ -74,7 +61,7 @@ func (t *TemplateProcessor) secret(name, key string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		t.secrets[name] = s
+		t.secrets[name] = &s
 	}
 	value, ok := t.secrets[name].Data[key]
 	if !ok {
