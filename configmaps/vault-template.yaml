@@ -4,7 +4,7 @@ metadata:
   name: vault-template
   annotations:
     konfd.io/kind: secret
-    konfd.io/name: vault-config
+    konfd.io/name: vault
     konfd.io/key: server.hcl
   labels:
     konfd.io/template: "true"
