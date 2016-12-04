@@ -15,6 +15,9 @@ import (
 	"flag"
 	"log"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 )
 
@@ -34,22 +37,43 @@ func main() {
 		os.Exit(0)
 	}
 
-	log.Println("Starting konfd ...")
-	for {
-		log.Println("Syncing templates...")
-		namespaces, err := getNamespaces()
-		if err != nil {
-			log.Println(err)
-			continue
-		}
+	log.Println("Starting konfd...")
+	var wg sync.WaitGroup
+	done := make(chan struct{})
 
-		for _, namespace := range namespaces.Items {
-			namespaceName := namespace.Metadata.Name
-			tp := NewTemplateProcessor(namespaceName)
-			tp.syncAll()
-		}
+	go func() {
+		wg.Add(1)
+		for {
+			log.Println("Syncing templates...")
+			namespaces, err := getNamespaces()
+			if err != nil {
+				log.Println(err)
+				continue
+			}
 
-		log.Printf("Syncing templates complete. Next sync in %d seconds", *syncInterval)
-		<-time.After(time.Duration(*syncInterval) * time.Second)
-	}
+			for _, namespace := range namespaces.Items {
+				namespaceName := namespace.Metadata.Name
+				tp := NewTemplateProcessor(namespaceName)
+				tp.syncAll()
+			}
+
+			log.Printf("Syncing templates complete. Next sync in %d seconds.", *syncInterval)
+			select {
+			case <-time.After(time.Duration(*syncInterval) * time.Second):
+			case <-done:
+				wg.Done()
+				return
+			}
+		}
+	}()
+
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+
+	<-signalChan
+	log.Printf("Shutdown signal received, exiting...")
+	close(done)
+	wg.Wait()
+
+	os.Exit(0)
 }
