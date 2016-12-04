@@ -150,5 +150,20 @@ func (tp *TemplateProcessor) processConfigMapTemplate(configmap *ConfigMap) erro
 		return nil
 	}
 
-	return createConfigMap(c)
+	oldConfigMap, err := getConfigMap(tp.namespace, name)
+	if err == ErrNotExist {
+		return createConfigMap(c)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if oldConfigMap.Data[key] != c.Data[key] {
+		log.Printf("%s configmap out of sync; syncing...", name)
+		oldConfigMap.Data[key] = c.Data[key]
+		return updateConfigMap(oldConfigMap)
+	}
+
+	return nil
 }

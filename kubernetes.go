@@ -20,6 +20,8 @@ import (
 	"net/http"
 )
 
+var ErrNotExist = errors.New("object does not exist")
+
 type NamespaceList struct {
 	Items []Namespace `json:"items"`
 }
@@ -64,6 +66,10 @@ func getConfigMap(namespace, name string) (*ConfigMap, error) {
 		return nil, err
 	}
 
+	if resp.StatusCode == 404 {
+		return nil, ErrNotExist
+	}
+
 	if resp.StatusCode != 200 {
 		return nil, errors.New("non 200 response code")
 	}
@@ -87,6 +93,10 @@ func getSecret(namespace, name string) (*Secret, error) {
 	resp, err := http.Get(u)
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode == 404 {
+		return nil, ErrNotExist
 	}
 
 	if resp.StatusCode != 200 {
@@ -162,6 +172,31 @@ func createConfigMap(c *ConfigMap) error {
 
 	if resp.StatusCode != 201 {
 		return fmt.Errorf("error creating configmap %s; got HTTP %v status code", c.Metadata.Name, resp.StatusCode)
+	}
+
+	return nil
+}
+
+func updateConfigMap(c *ConfigMap) error {
+	body, err := json.MarshalIndent(&c, "", "  ")
+	if err != nil {
+		return fmt.Errorf("error encoding configmap %s: %v", c.Metadata.Name, err)
+	}
+
+	u := fmt.Sprintf("http://127.0.0.1:8001/api/v1/namespaces/%s/configmaps/%s", c.Metadata.Namespace, c.Metadata.Name)
+	request, err := http.NewRequest(http.MethodPut, u, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("error updating configmap %s: %v", c.Metadata.Name, err)
+	}
+
+	resp, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return fmt.Errorf("error updating configmap %s: %v", c.Metadata.Name, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("error updating configmap %s; got HTTP %v status code", c.Metadata.Name, resp.StatusCode)
 	}
 
 	return nil
