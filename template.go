@@ -14,7 +14,7 @@ type TemplateProcessor struct {
 
 func (t *TemplateProcessor) configmap(name, key string) (string, error) {
 	// Check if the config map has already been fetched for this
-	// namespace. If not, retrieve the config map and cached it for
+	// namespace. If not, retrieve the config map and cache it for
 	// future use.
 	_, ok := t.configMaps[name]
 	if !ok {
