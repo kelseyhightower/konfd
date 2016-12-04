@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
 	"errors"
+	"html/template"
+	"log"
 )
 
 type TemplateProcessor struct {
@@ -12,20 +15,29 @@ type TemplateProcessor struct {
 	templates  map[string]*ConfigMap
 }
 
-func (t *TemplateProcessor) configmap(name, key string) (string, error) {
+func NewTemplateProcessor(namespace string) *TemplateProcessor {
+	return &TemplateProcessor{
+		namespace:  namespace,
+		configMaps: make(map[string]*ConfigMap),
+		secrets:    make(map[string]*Secret),
+		templates:  make(map[string]*ConfigMap),
+	}
+}
+
+func (tp *TemplateProcessor) configmap(name, key string) (string, error) {
 	// Check if the config map has already been fetched for this
 	// namespace. If not, retrieve the config map and cache it for
 	// future use.
-	_, ok := t.configMaps[name]
+	_, ok := tp.configMaps[name]
 	if !ok {
-		cm, err := getConfigMap(t.namespace, name)
+		cm, err := getConfigMap(tp.namespace, name)
 		if err != nil {
 			return "", err
 		}
-		t.configMaps[name] = cm
+		tp.configMaps[name] = cm
 	}
 
-	v, ok := t.configMaps[name].Data[key]
+	v, ok := tp.configMaps[name].Data[key]
 	if !ok {
 		return "", errors.New("missing key " + key)
 	}
@@ -33,17 +45,17 @@ func (t *TemplateProcessor) configmap(name, key string) (string, error) {
 	return v, nil
 }
 
-func (t *TemplateProcessor) secret(name, key string) (string, error) {
-	_, ok := t.secrets[name]
+func (tp *TemplateProcessor) secret(name, key string) (string, error) {
+	_, ok := tp.secrets[name]
 	if !ok {
-		s, err := getSecret(t.namespace, name)
+		s, err := getSecret(tp.namespace, name)
 		if err != nil {
 			return "", err
 		}
-		t.secrets[name] = s
+		tp.secrets[name] = s
 	}
 
-	v, ok := t.secrets[name].Data[key]
+	v, ok := tp.secrets[name].Data[key]
 	if !ok {
 		return "", errors.New("missing key " + key)
 	}
@@ -56,6 +68,46 @@ func (t *TemplateProcessor) secret(name, key string) (string, error) {
 	return string(d), nil
 }
 
-func (t *TemplateProcessor) sync() error {
-	return nil
+func (tp *TemplateProcessor) sync() {
+	configmaps, err := getConfigMaps(tp.namespace)
+	if err != nil {
+		log.Println(err)
+	}
+
+	for _, configmap := range configmaps.Items {
+		ts, ok := configmap.Data["template"]
+		if !ok {
+			log.Println("missing template key")
+			continue
+		}
+
+		t := template.New(configmap.Metadata.Name)
+		t.Funcs(template.FuncMap{
+			"configmap": tp.configmap,
+			"secret":    tp.secret,
+		})
+
+		t, err := t.Parse(ts)
+		if err != nil {
+			log.Println("error parsing template: %v", err)
+			continue
+		}
+
+		var value bytes.Buffer
+		err = t.Execute(&value, nil)
+		if err != nil {
+			log.Println("error executing template: %v", err)
+			continue
+		}
+
+		annotations := configmap.Metadata.Annotations
+		name := annotations["konfd.io/name"]
+		key := annotations["konfd.io/key"]
+
+		err = createConfigMap(tp.namespace, name, key, value.String())
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+	}
 }
