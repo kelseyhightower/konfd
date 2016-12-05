@@ -94,9 +94,6 @@ Create the `vault-secrets` secret:
 kubectl create secret generic vault-secrets \
   --from-literal 'mysql.password=v@ulTi$d0p3'
 ```
-```
-secret "vault-secrets" created
-```
 
 Create the `vault-configs` configmap:
 
@@ -108,10 +105,6 @@ kubectl create configmap vault-configs \
   --from-literal 'mysql.address=23.12.4.3:3306' \
   --from-literal 'mysql.database=vault' \
   --from-literal 'mysql.table=vault'
-```
-
-```
-configmap "vault-configs" created
 ```
 
 ### Create the vault template configmap
@@ -156,9 +149,6 @@ Submit the `vault-template-example` configmap to the Kubernetes API server:
 
 ```
 kubectl create -f configmaps/vault-template-example.yaml
-```
-```
-configmap "vault-template-example" created
 ```
 
 ### Review the results
