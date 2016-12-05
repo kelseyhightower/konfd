@@ -46,10 +46,10 @@ Submit the `template` configmap:
 kubectl create -f configmaps/template.yaml
 ```
 
-Process all templates in all namespaces:
+### Deploy the konfd replicaset
 
 ```
-konfd
+kubectl create -f replicasets/konfd.yam
 ```
 
 Review the results:
