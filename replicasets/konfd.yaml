@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: konfd
-          image: "gcr.io/hightowerlabs/konfd:0.0.1"
+          image: "gcr.io/hightowerlabs/konfd:v0.0.2"
           args:
             - "--all-namespaces"
           resources:
