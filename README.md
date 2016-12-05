@@ -74,6 +74,28 @@ data:
 
 ### Testing with noop mode
 
+konfd can be run outside of the Kubernetes cluster by running `kubectl` in proxy mode:
+
+```
+kubectl proxy
+```
+
+Process a single template in the default namespace:
+
 ```
 konfd -onetime -noop -namespace default -configmap template
+```
+
+```
+{
+  "apiVersion": "v1",
+  "data": {
+    "server.hcl": "default_lease_ttl = 768h\nbackend \"mysql\" {\n  username = \"vault\"\n  password = \"v@ulTi$d0p3\"\n  tls_ca_file = \"/etc/tls/mysql-ca.pem\"\n}\n"
+  },
+  "kind": "ConfigMap",
+  "metadata": {
+    "name": "vault",
+    "namespace": "default"
+  }
+}
 ```
