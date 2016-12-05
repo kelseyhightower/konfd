@@ -21,6 +21,24 @@ kubectl create configmap vault \
   --from-literal 'mysql.table=vault'
 ```
 
+### Create a konfd template
+
+konfd stores template configs in Kubernetes configmaps. By default `konfd` will search all namespaces and filter configmaps using the following labels:
+
+```
+  labels:
+    konfd.io/template: "true"
+```
+
+Each template must include the following annotations:
+
+```
+annotations:
+    konfd.io/kind: secret
+    konfd.io/name: vault
+    konfd.io/key: server.hcl
+```
+
 Create the `vault-template` configmap:
 
 ```
