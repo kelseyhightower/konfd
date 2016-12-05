@@ -75,6 +75,7 @@ password = "v@ulTi$d0p3"
 
 The following template uses a mix of secrets and configmaps to generate a vault config file. The results of the `vault-template` configmap will be stored in a secret named `vault` in a key named `server.hcl`.
 
+Ensure `konfd` is [running in the cluster](deployment-guide.md).
 
 Create the `vault-secrets` secret:
 
