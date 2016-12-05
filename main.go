@@ -36,7 +36,7 @@ func main() {
 	flag.Var(&configmaps, "configmap", "the configmap to process.")
 	flag.BoolVar(&noop, "noop", false, "print processed configmaps and secrets and do not submit them to the cluster.")
 	flag.BoolVar(&onetime, "onetime", false, "run one time and exit.")
-	flag.DurationVar(&syncInterval, "sync-interval", 60, "the number of seconds between template processing.")
+	flag.DurationVar(&syncInterval, "sync-interval", (60 * time.Second), "the number of seconds between template processing.")
 	flag.Parse()
 
 	if onetime {
@@ -54,7 +54,7 @@ func main() {
 			process(namespaces, configmaps, noop)
 			log.Printf("Syncing templates complete. Next sync in %d seconds.", syncInterval)
 			select {
-			case <-time.After(syncInterval * time.Second):
+			case <-time.After(syncInterval):
 			case <-done:
 				wg.Done()
 				return
