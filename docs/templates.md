@@ -77,6 +77,8 @@ The following template uses a mix of secrets and configmaps to generate a vault 
 
 Ensure `konfd` is [running in the cluster](deployment-guide.md).
 
+### Add configuration data
+
 Create the `vault-secrets` secret:
 
 ```
@@ -102,6 +104,8 @@ kubectl create configmap vault-configs \
 ```
 configmap "vault-configs" created
 ```
+
+### Create the vault template configmap
 
 Create the `vault-template` configmap:
 
@@ -148,6 +152,8 @@ kubectl create -f vault-template.yaml
 configmap "vault-template" created
 ```
 
+### Review the requests
+
 After the "vault-template" configmap is processed by `konfd` view the results:
 
 ```
@@ -169,6 +175,9 @@ type: Opaque
 ```
 
 > Notice the server.hcl has been added to the existing vault secret.
+
+
+#### Decoding Secrets
 
 Secret values are base64 encoded. Decode the `server.hcl` to see the processed template:
 
