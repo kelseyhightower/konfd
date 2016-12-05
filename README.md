@@ -81,7 +81,7 @@ konfd
 2016/12/05 02:11:06 Syncing templates complete. Next sync in 60 seconds.
 ```
 
-### Kubernetes
+## Kubernetes
 
 Deploy the `konfd` replicaset:
 
