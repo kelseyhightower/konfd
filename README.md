@@ -49,4 +49,35 @@ konfd --noop --namespace default --configmap vault-template
 }
 ```
 
-Notice the `server.hcl` has been added to the existing `vault` secret.
+> Notice the `server.hcl` has been added to the existing `vault` secret.
+
+### Sync all namepaces
+
+```
+konfd
+```
+
+```
+2016/12/05 02:10:06 Starting konfd...
+2016/12/05 02:10:06 Syncing templates complete. Next sync in 60 seconds.
+2016/12/05 02:11:06 Syncing templates complete. Next sync in 60 seconds.
+```
+
+### Kubernetes
+
+Deploy the `konfd` replicaset:
+
+```
+kubectl create -f replicasets/konfd.yaml 
+```
+
+Review the logs:
+
+```
+kubectl logs konfd-yk0v3 -c konfd
+```
+```
+2016/12/05 02:10:06 Starting konfd...
+2016/12/05 02:10:06 Syncing templates complete. Next sync in 60 seconds.
+2016/12/05 02:11:06 Syncing templates complete. Next sync in 60 seconds.
+```
