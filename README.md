@@ -7,14 +7,38 @@ Manage application configuration using Kubernetes secrets, configmaps, and Go te
 Create configmaps and secrets:
 
 ```
-kubectl create secret generic vault-secrets --from-literal 'mysql_password=v@ulTi$d0p3'
+kubectl create secret generic vault-secrets \
+  --from-literal 'mysql_password=v@ulTi$d0p3'
 ```
 
 ```
-kubectl create configmap vault-configs --from-literal 'mysql_username=vault'
+kubectl create configmap vault-configs \
+  --from-literal 'mysql_username=vault'
 ```
 
 Create the `template` configmap:
+
+```
+cat configmaps/template.yaml 
+```
+```
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: template
+  annotations:
+    konfd.io/kind: configmap
+    konfd.io/name: vault
+    konfd.io/key:  server.hcl
+  labels:
+    konfd.io/template: "true"
+data:
+  template: |
+    backend "mysql" {
+      username = "{{configmap "vault-configs" "mysql_username"}}"
+      password = "{{secret "vault-secrets" "mysql_password"}}"
+    }
+```
 
 ```
 kubectl create -f configmaps/template.yaml
