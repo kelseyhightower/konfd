@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-template
+  annotations:
+    konfd.io/kind: secret
+    konfd.io/name: vault
+    konfd.io/key: server.hcl
+  labels:
+    konfd.io/template: "true"
+data:
+  template: |
+    default_lease_ttl = {{configmap "vault-configs" "default_lease_ttl"}}
+    max_lease_ttl = {{configmap "vault-configs" "max_lease_ttl"}}
+    listener "tcp" {
+      address = "0.0.0.0:8200"
+      tls_cert_file = "/etc/tls/server.pem"
+      tls_key_file = "/etc/tls/server.key"
+    }
+    backend "mysql" {
+      username = "{{configmap "vault-configs" "mysql.username"}}"
+      password = "{{secret "vault-secrets" "mysql.password"}}"
+      address = "{{configmap "vault-configs" "mysql.address"}}"
+      database = "{{configmap "vault-configs" "mysql.database"}}"
+      table = "{{configmap "vault-configs" "mysql.table"}}"
+      tls_ca_file = "/etc/tls/mysql-ca.pem"
+    }

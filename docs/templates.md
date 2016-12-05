@@ -75,12 +75,19 @@ password = "v@ulTi$d0p3"
 
 The following template uses a mix of secrets and configmaps to generate a vault config file. The results of the `vault-template` configmap will be stored in a secret named `vault` in a key named `server.hcl`.
 
-Add config data and secrets:
+
+Create the `vault-secrets` secret:
 
 ```
 kubectl create secret generic vault-secrets \
   --from-literal 'mysql.password=v@ulTi$d0p3'
 ```
+```
+secret "vault-secrets" created
+```
+
+Create the `vault-configs` configmap:
+
 ```
 kubectl create configmap vault-configs \
   --from-literal 'default_lease_ttl=768h' \
@@ -91,7 +98,15 @@ kubectl create configmap vault-configs \
   --from-literal 'mysql.table=vault'
 ```
 
+```
+configmap "vault-configs" created
+```
+
 Create the `vault-template` configmap:
+
+```
+cat vault-template.yaml
+```
 
 ```
 apiVersion: v1
@@ -123,7 +138,16 @@ data:
     }
 ```
 
-Results:
+Submit the `vault-template` configmap to the Kubernetes API server:
+
+```
+kubectl create -f vault-template.yaml
+```
+```
+configmap "vault-template" created
+```
+
+After the "vault-template" configmap is processed by `konfd` view the results:
 
 ```
 kubectl get secrets vault -o yaml
@@ -131,16 +155,15 @@ kubectl get secrets vault -o yaml
 ```
 apiVersion: v1
 data:
-  mysql.password: dkB1bFRpJGQwcDM=
-  server.hcl: ZGVmYXVsdF9sZWFzZV90dGwgPSA3NjhoCm1heF9sZWFzZV90dGwgPSA3NjhoCgpsaXN0ZW5lciAidGNwIiB7CiAgYWRkcmVzcyA9ICIwLjAuMC4wOjgyMDAiCiAgdGxzX2NlcnRfZmlsZSA9ICIvZXRjL3Rscy9zZXJ2ZXIucGVtIgogIHRsc19rZXlfZmlsZSA9ICIvZXRjL3Rscy9zZXJ2ZXIua2V5Igp9CgpiYWNrZW5kICJteXNxbCIgewogIHVzZXJuYW1lID0gInZhdWx0IgogIHBhc3N3b3JkID0gInZAdWxUaSRkMHAzIgogIGFkZHJlc3MgPSAiMjMuMTIuNC4zOjMzMDYiCiAgZGF0YWJhc2UgPSAidmF1bHQiCiAgdGFibGUgPSAidmF1bHQiCiAgdGxzX2NhX2ZpbGUgPSAiL2V0Yy90bHMvbXlzcWwtY2EucGVtIgp9Cg==
+  server.hcl: ZGVmYXVsdF9sZWFzZV90dGwgPSA3NjhoCm1heF9sZWFzZV90dGwgPSA3NjhoCmxpc3RlbmVyICJ0Y3AiIHsKICBhZGRyZXNzID0gIjAuMC4wLjA6ODIwMCIKICB0bHNfY2VydF9maWxlID0gIi9ldGMvdGxzL3NlcnZlci5wZW0iCiAgdGxzX2tleV9maWxlID0gIi9ldGMvdGxzL3NlcnZlci5rZXkiCn0KYmFja2VuZCAibXlzcWwiIHsKICB1c2VybmFtZSA9ICJ2YXVsdCIKICBwYXNzd29yZCA9ICJ2QHVsVGkkZDBwMyIKICBhZGRyZXNzID0gIjIzLjEyLjQuMzozMzA2IgogIGRhdGFiYXNlID0gInZhdWx0IgogIHRhYmxlID0gInZhdWx0IgogIHRsc19jYV9maWxlID0gIi9ldGMvdGxzL215c3FsLWNhLnBlbSIKfQo=
 kind: Secret
 metadata:
-  creationTimestamp: 2016-12-05T14:01:52Z
+  creationTimestamp: 2016-12-05T14:24:07Z
   name: vault
   namespace: default
-  resourceVersion: "329135"
+  resourceVersion: "331267"
   selfLink: /api/v1/namespaces/default/secrets/vault
-  uid: 5fb5f053-baf3-11e6-8f3a-42010a8a001a
+  uid: 7b28717c-baf6-11e6-8f3a-42010a8a001a
 type: Opaque
 ```
 
@@ -154,13 +177,11 @@ kubectl get secrets vault -o 'go-template={{index .data "server.hcl"}}' | base64
 ```
 default_lease_ttl = 768h
 max_lease_ttl = 768h
-
 listener "tcp" {
   address = "0.0.0.0:8200"
   tls_cert_file = "/etc/tls/server.pem"
   tls_key_file = "/etc/tls/server.key"
 }
-
 backend "mysql" {
   username = "vault"
   password = "v@ulTi$d0p3"
