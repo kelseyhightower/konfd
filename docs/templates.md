@@ -152,7 +152,7 @@ kubectl create -f vault-template.yaml
 configmap "vault-template" created
 ```
 
-### Review the requests
+### Review the results
 
 After the "vault-template" configmap is processed by `konfd` view the results:
 
