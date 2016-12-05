@@ -1,5 +1,7 @@
 # konfd
 
+![Super Dope](https://img.shields.io/badge/Hightower-super%20dope-b9f2ff.svg)
+
 Manage application configuration using Kubernetes secrets, configmaps, and Go templates.
 
 ## Usage
