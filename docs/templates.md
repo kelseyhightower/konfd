@@ -116,17 +116,17 @@ configmap "vault-configs" created
 
 ### Create the vault template configmap
 
-Create the `vault-template` configmap:
+Create the `vault-template-example` configmap:
 
 ```
-cat vault-template.yaml
+cat configmaps/vault-template-example.yaml
 ```
 
 ```
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: vault-template
+  name: vault-template-example
   annotations:
     konfd.io/kind: secret
     konfd.io/name: vault
@@ -152,18 +152,18 @@ data:
     }
 ```
 
-Submit the `vault-template` configmap to the Kubernetes API server:
+Submit the `vault-template-example` configmap to the Kubernetes API server:
 
 ```
-kubectl create -f vault-template.yaml
+kubectl create -f configmaps/vault-template-example.yaml
 ```
 ```
-configmap "vault-template" created
+configmap "vault-template-example" created
 ```
 
 ### Review the results
 
-After the "vault-template" configmap is processed by `konfd` view the results:
+After the "vault-template-example" configmap is processed by `konfd` view the results:
 
 ```
 kubectl get secrets vault -o yaml
