@@ -17,10 +17,10 @@ kubectl create configmap vault-configs \
   --from-literal 'mysql_username=vault'
 ```
 
-Create the `template` configmap:
+Create the `vault-template` configmap:
 
 ```
-cat configmaps/template.yaml 
+cat configmaps/vault-template.yaml 
 ```
 ```
 apiVersion: v1
