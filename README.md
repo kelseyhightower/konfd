@@ -13,7 +13,7 @@ kubectl create secret generic vault-secrets \
 
 ```
 kubectl create configmap vault-configs \
-  --from-literal 'default_lease_ttl=768h'
+  --from-literal 'default_lease_ttl=768h' \
   --from-literal 'mysql_username=vault'
 ```
 
