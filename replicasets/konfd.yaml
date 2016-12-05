@@ -1,0 +1,28 @@
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+  name: konfd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: konfd
+  template:
+    metadata:
+      labels:
+        app: konfd
+    spec:
+      containers:
+        - name: konfd
+          image: "gcr.io/hightowerlabs/konfd:0.0.1"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 30Mi
+        - name: kubectl
+          image: "gcr.io/google_containers/hyperkube:v1.4.6"
+          command:
+            - "/hyperkube"
+          args:
+            - "kubectl"
+            - "proxy"
