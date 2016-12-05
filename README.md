@@ -49,7 +49,7 @@ kubectl create -f configmaps/template.yaml
 ### Deploy the konfd replicaset
 
 ```
-kubectl create -f replicasets/konfd.yam
+kubectl create -f replicasets/konfd.yaml
 ```
 
 Review the results:
