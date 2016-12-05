@@ -39,6 +39,12 @@ Pass the configmap name as the first argument and the key name as the second arg
 default_lease_ttl = {{configmap "vault-configs" "default_lease_ttl"}}
 ```
 
+Results:
+
+```
+default_lease_ttl = 768h
+```
+
 ### secret
 
 Returns the secret value of the first argument (secret name) and second argument (secret key).
@@ -56,6 +62,12 @@ Pass the secret name as the first argument and the secret key name as the second
 
 ```
 password = "{{secret "vault-secrets" "mysql.password"}}"
+```
+
+Results:
+
+```
+password = "v@ulTi$d0p3"
 ```
 
 ## Example
