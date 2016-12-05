@@ -15,8 +15,6 @@ spec:
       containers:
         - name: konfd
           image: "gcr.io/hightowerlabs/konfd:v0.0.2"
-          args:
-            - "--all-namespaces"
           resources:
             requests:
               cpu: 100m
