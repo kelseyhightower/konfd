@@ -40,11 +40,13 @@ data:
     }
 ```
 
+Submit the `template` configmap:
+
 ```
 kubectl create -f configmaps/template.yaml
 ```
 
-Process all konfd templates in all namespaces:
+Process all templates in all namespaces:
 
 ```
 konfd
