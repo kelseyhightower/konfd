@@ -73,6 +73,26 @@ password = "v@ulTi$d0p3"
 
 ## Example
 
+The following template uses a mix of secrets and configmaps to generate a vault config file. The results of the `vault-template` configmap will be stored in a secret named `vault` in a key named `server.hcl`.
+
+Add config data and secrets:
+
+```
+kubectl create secret generic vault-secrets \
+  --from-literal 'mysql.password=v@ulTi$d0p3'
+```
+```
+kubectl create configmap vault-configs \
+  --from-literal 'default_lease_ttl=768h' \
+  --from-literal 'max_lease_ttl=768h' \
+  --from-literal 'mysql.username=vault' \
+  --from-literal 'mysql.address=23.12.4.3:3306' \
+  --from-literal 'mysql.database=vault' \
+  --from-literal 'mysql.table=vault'
+```
+
+Create the `vault-template` configmap:
+
 ```
 apiVersion: v1
 kind: ConfigMap
@@ -86,19 +106,67 @@ metadata:
     konfd.io/template: "true"
 data:
   template: |
-    default_lease_ttl = {{configmap "vault" "default_lease_ttl"}}
-    max_lease_ttl = {{configmap "vault" "max_lease_ttl"}}
+    default_lease_ttl = {{configmap "vault-configs" "default_lease_ttl"}}
+    max_lease_ttl = {{configmap "vault-configs" "max_lease_ttl"}}
     listener "tcp" {
-        address = "0.0.0.0:8200"
-        tls_cert_file = "/etc/tls/server.pem"
-        tls_key_file = "/etc/tls/server.key"
+      address = "0.0.0.0:8200"
+      tls_cert_file = "/etc/tls/server.pem"
+      tls_key_file = "/etc/tls/server.key"
     }
     backend "mysql" {
-        username = "{{configmap "vault" "mysql.username"}}"
-        password = "{{secret "vault" "mysql.password"}}"
-        address = "{{configmap "vault" "mysql.address"}}"
-        database = "{{configmap "vault" "mysql.database"}}"
-        table = "{{configmap "vault" "mysql.table"}}"
-        tls_ca_file = "/etc/tls/mysql-ca.pem"
+      username = "{{configmap "vault-configs" "mysql.username"}}"
+      password = "{{secret "vault-secrets" "mysql.password"}}"
+      address = "{{configmap "vault-configs" "mysql.address"}}"
+      database = "{{configmap "vault-configs" "mysql.database"}}"
+      table = "{{configmap "vault-configs" "mysql.table"}}"
+      tls_ca_file = "/etc/tls/mysql-ca.pem"
     }
+```
+
+Results:
+
+```
+kubectl get secrets vault -o yaml
+```
+```
+apiVersion: v1
+data:
+  mysql.password: dkB1bFRpJGQwcDM=
+  server.hcl: ZGVmYXVsdF9sZWFzZV90dGwgPSA3NjhoCm1heF9sZWFzZV90dGwgPSA3NjhoCgpsaXN0ZW5lciAidGNwIiB7CiAgYWRkcmVzcyA9ICIwLjAuMC4wOjgyMDAiCiAgdGxzX2NlcnRfZmlsZSA9ICIvZXRjL3Rscy9zZXJ2ZXIucGVtIgogIHRsc19rZXlfZmlsZSA9ICIvZXRjL3Rscy9zZXJ2ZXIua2V5Igp9CgpiYWNrZW5kICJteXNxbCIgewogIHVzZXJuYW1lID0gInZhdWx0IgogIHBhc3N3b3JkID0gInZAdWxUaSRkMHAzIgogIGFkZHJlc3MgPSAiMjMuMTIuNC4zOjMzMDYiCiAgZGF0YWJhc2UgPSAidmF1bHQiCiAgdGFibGUgPSAidmF1bHQiCiAgdGxzX2NhX2ZpbGUgPSAiL2V0Yy90bHMvbXlzcWwtY2EucGVtIgp9Cg==
+kind: Secret
+metadata:
+  creationTimestamp: 2016-12-05T14:01:52Z
+  name: vault
+  namespace: default
+  resourceVersion: "329135"
+  selfLink: /api/v1/namespaces/default/secrets/vault
+  uid: 5fb5f053-baf3-11e6-8f3a-42010a8a001a
+type: Opaque
+```
+
+> Notice the server.hcl has been added to the existing vault secret.
+
+Secret values are base64 encoded. Decode the `server.hcl` to see the processed template:
+
+```
+kubectl get secrets vault -o 'go-template={{index .data "server.hcl"}}' | base64 -D -
+```
+```
+default_lease_ttl = 768h
+max_lease_ttl = 768h
+
+listener "tcp" {
+  address = "0.0.0.0:8200"
+  tls_cert_file = "/etc/tls/server.pem"
+  tls_key_file = "/etc/tls/server.key"
+}
+
+backend "mysql" {
+  username = "vault"
+  password = "v@ulTi$d0p3"
+  address = "23.12.4.3:3306"
+  database = "vault"
+  table = "vault"
+  tls_ca_file = "/etc/tls/mysql-ca.pem"
+}
 ```
