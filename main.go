@@ -52,7 +52,7 @@ func main() {
 		wg.Add(1)
 		for {
 			process(namespaces, configmaps, noop)
-			log.Printf("Syncing templates complete. Next sync in %d seconds.", syncInterval)
+			log.Printf("Syncing templates complete. Next sync in %v seconds.", syncInterval.Seconds())
 			select {
 			case <-time.After(syncInterval):
 			case <-done:
