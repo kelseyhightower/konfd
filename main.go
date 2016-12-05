@@ -45,6 +45,9 @@ func main() {
 	}
 
 	log.Println("Starting konfd...")
+
+	waitForKubernetesProxy()
+
 	var wg sync.WaitGroup
 	done := make(chan struct{})
 

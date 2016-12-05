@@ -1,7 +1,7 @@
 #!/bin/bash
 ./build
-docker build -t gcr.io/hightowerlabs/konfd:v0.0.3 .
-gcloud docker -- push gcr.io/hightowerlabs/konfd:v0.0.3
+docker build -t gcr.io/hightowerlabs/konfd:v0.0.4 .
+gcloud docker -- push gcr.io/hightowerlabs/konfd:v0.0.4
 gsutil defacl ch -u AllUsers:R gs://artifacts.hightowerlabs.appspot.com
 gsutil acl ch -r -u AllUsers:R gs://artifacts.hightowerlabs.appspot.com
 rm konfd

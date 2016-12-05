@@ -175,6 +175,10 @@ type: Opaque
 
 > Notice the server.hcl has been added to the existing vault secret.
 
+It can take up to 60 seconds before the template is processed.
+
+> Use the `-sync-interval` flag to adjust the template sync interval.
+
 
 #### Decoding Secrets
 

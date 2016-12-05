@@ -1,4 +1,4 @@
 #!/bin/bash
 kubectl delete secrets vault vault-secrets
-kubectl delete configmaps vault-configs vault-template
+kubectl delete configmaps vault-configs vault-template vault-template-example
 kubectl delete rs konfd

@@ -20,7 +20,9 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"time"
 )
 
 var ErrNotExist = errors.New("object does not exist")
@@ -286,4 +288,17 @@ func getNamespaces() (*NamespaceList, error) {
 		return nil, err
 	}
 	return &nl, nil
+}
+
+func waitForKubernetesProxy() {
+	for {
+		resp, err := http.Get("http://127.0.0.1:8001/api")
+		if err != nil {
+			log.Println(err)
+			time.Sleep(time.Second)
+			continue
+		}
+		resp.Body.Close()
+		return
+	}
 }
