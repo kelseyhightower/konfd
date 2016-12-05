@@ -43,6 +43,8 @@ data:
     }
 ```
 
+> See the [templates](docs/templates.md) docs for more details.
+
 Submit the `vault-template` configmap:
 
 ```
@@ -54,6 +56,8 @@ kubectl create -f configmaps/vault-template.yaml
 ```
 kubectl create -f replicasets/konfd.yaml
 ```
+
+> See the [deployment guide](docs/deployment-guide.md) for more details.
 
 Review the results:
 
@@ -87,5 +91,5 @@ kubectl proxy
 Process a single template in the default namespace:
 
 ```
-konfd -onetime -noop -namespace default -configmap template
+konfd -onetime -noop -namespace default -configmap vault-template
 ```
