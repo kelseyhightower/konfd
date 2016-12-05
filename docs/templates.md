@@ -2,6 +2,11 @@
 
 konfd templates are [Go templates](https://golang.org/pkg/text/template) with access to two additional [template functions](https://golang.org/pkg/text/template/#hdr-Functions): `configmap` and `secrets`, which provide access to Kubernetes secrets and configmaps.
 
+* [Annotations](#annotations)
+* [Labels](#labels)
+* [Template Functions](#template-functions)
+* [Example](#example)
+
 ## Annotations
 
 There are three (3) required annotations that determine where processed templates are stored:
