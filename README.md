@@ -4,7 +4,7 @@ Manage application configuration using Kubernetes secrets, configmaps, and Go te
 
 ## Usage
 
-Create configmaps and secrets:
+### Create configmaps and secrets
 
 ```
 kubectl create secret generic vault-secrets \
@@ -17,7 +17,7 @@ kubectl create configmap vault-configs \
   --from-literal 'mysql_username=vault'
 ```
 
-Create the `vault-template` configmap:
+### Create a template configmap
 
 ```
 cat configmaps/vault-template.yaml 
@@ -59,7 +59,7 @@ kubectl create -f replicasets/konfd.yaml
 
 > See the [deployment guide](docs/deployment-guide.md) for more details.
 
-Review the results:
+### Review the results
 
 ```
 kubectl get configmaps vault -o yaml
