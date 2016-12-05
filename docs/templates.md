@@ -1,6 +1,6 @@
 # Templates
 
-konfd templates are [Go templates](https://golang.org/pkg/text/template) with access to two additional [template functions](https://golang.org/pkg/text/template/#hdr-Functions): `configmap` and `secrets`, which provide access to Kubernetes secrets and configmaps.
+konfd templates are [Go templates](https://golang.org/pkg/text/template) with access to two (2) additional [template functions](https://golang.org/pkg/text/template/#hdr-Functions): `configmap` and `secrets`, which provide access to Kubernetes secrets and configmaps.
 
 * [Annotations](#annotations)
 * [Labels](#labels)
