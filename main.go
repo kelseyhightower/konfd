@@ -23,19 +23,24 @@ import (
 	"time"
 )
 
+var (
+	configmaps   stringSlice
+	namespaces   stringSlice
+	noop         bool
+	onetime      bool
+	syncInterval time.Duration
+)
+
 func main() {
-	namespace := flag.String("namespace", "default", "The Kubernetes namespace")
-	name := flag.String("configmap-name", "", "The configmap name")
-	noop := flag.Bool("noop", false, "Process template configmap and print to standard out")
-	syncInterval := flag.Int64("sync-interval", 60, "Sync interval in seconds")
+	flag.Var(&namespaces, "namespace", "the namespace to process.")
+	flag.Var(&configmaps, "configmap", "the configmap to process.")
+	flag.BoolVar(&noop, "noop", false, "print processed configmaps and secrets and do not submit them to the cluster.")
+	flag.BoolVar(&onetime, "onetime", false, "run one time and exit.")
+	flag.DurationVar(&syncInterval, "sync-interval", 60, "the number of seconds between template processing.")
 	flag.Parse()
 
-	if *name != "" {
-		tp := NewTemplateProcessor(*namespace)
-		tp.setNoop(*noop)
-		if err := tp.sync(*name); err != nil {
-			log.Fatal(err)
-		}
+	if onetime {
+		process(namespaces, configmaps, noop)
 		os.Exit(0)
 	}
 
@@ -46,22 +51,10 @@ func main() {
 	go func() {
 		wg.Add(1)
 		for {
-			log.Println("Syncing templates...")
-			namespaces, err := getNamespaces()
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-
-			for _, namespace := range namespaces.Items {
-				namespaceName := namespace.Metadata.Name
-				tp := NewTemplateProcessor(namespaceName)
-				tp.syncAll()
-			}
-
-			log.Printf("Syncing templates complete. Next sync in %d seconds.", *syncInterval)
+			process(namespaces, configmaps, noop)
+			log.Printf("Syncing templates complete. Next sync in %d seconds.", syncInterval)
 			select {
-			case <-time.After(time.Duration(*syncInterval) * time.Second):
+			case <-time.After(syncInterval * time.Second):
 			case <-done:
 				wg.Done()
 				return
@@ -76,6 +69,5 @@ func main() {
 	log.Printf("Shutdown signal received, exiting...")
 	close(done)
 	wg.Wait()
-
 	os.Exit(0)
 }

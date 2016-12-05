@@ -89,23 +89,50 @@ func (tp *TemplateProcessor) secret(name, key string) (string, error) {
 	return string(d), nil
 }
 
-func (tp *TemplateProcessor) sync(name string) error {
-	cm, err := getConfigMap(tp.namespace, name)
-	if err != nil {
-		return err
+func process(namespaces, configmaps []string, noop bool) {
+	if len(namespaces) == 0 {
+		ns, err := getNamespaces()
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		for _, n := range ns.Items {
+			namespaces = append(namespaces, n.Metadata.Name)
+		}
 	}
-	return tp.processConfigMapTemplate(cm)
+
+	for _, n := range namespaces {
+		tp := NewTemplateProcessor(n)
+		tp.setNoop(noop)
+		tp.sync(configmaps)
+	}
 }
 
-func (tp *TemplateProcessor) syncAll() {
-	configmaps, err := getConfigMaps(tp.namespace)
-	if err != nil {
-		log.Println(err)
-		return
+func (tp *TemplateProcessor) sync(configmaps []string) {
+	var cms []*ConfigMap
+
+	if len(configmaps) == 0 {
+		cmList, err := getConfigMaps(tp.namespace)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		for _, c := range cmList.Items {
+			cms = append(cms, &c)
+		}
 	}
 
-	for _, configmap := range configmaps.Items {
-		if err := tp.processConfigMapTemplate(&configmap); err != nil {
+	for _, c := range configmaps {
+		cm, err := getConfigMap(tp.namespace, c)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		cms = append(cms, cm)
+	}
+
+	for _, c := range cms {
+		if err := tp.processConfigMapTemplate(c); err != nil {
 			log.Println(err)
 			continue
 		}
