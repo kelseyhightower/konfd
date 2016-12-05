@@ -13,6 +13,7 @@ kubectl create secret generic vault-secrets \
 
 ```
 kubectl create configmap vault-configs \
+  --from-literal 'default_lease_ttl=768h'
   --from-literal 'mysql_username=vault'
 ```
 
@@ -25,7 +26,7 @@ cat configmaps/template.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: template
+  name: vault-template
   annotations:
     konfd.io/kind: configmap
     konfd.io/name: vault
@@ -34,16 +35,18 @@ metadata:
     konfd.io/template: "true"
 data:
   template: |
+    default_lease_ttl = {{configmap "vault-configs" "default_lease_ttl"}}
     backend "mysql" {
       username = "{{configmap "vault-configs" "mysql_username"}}"
       password = "{{secret "vault-secrets" "mysql_password"}}"
+      tls_ca_file = "/etc/tls/mysql-ca.pem"
     }
 ```
 
-Submit the `template` configmap:
+Submit the `vault-template` configmap:
 
 ```
-kubectl create -f configmaps/template.yaml
+kubectl create -f configmaps/vault-template.yaml
 ```
 
 ### Deploy the konfd replicaset
@@ -66,6 +69,7 @@ metadata:
   namespace: default
 data:
   server.hcl: |
+    default_lease_ttl = 768h
     backend "mysql" {
       username = "vault"
       password = "v@ulTi$d0p3"
