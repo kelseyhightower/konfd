@@ -30,7 +30,7 @@ kubectl create -f configmaps/vault-template.yaml
 ### Testing with noop mode
 
 ```
-konfd --noop --namespace default --configmap-name vault-template
+konfd --noop --namespace default --configmap vault-template
 ```
 
 ```
