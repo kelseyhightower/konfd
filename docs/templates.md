@@ -82,6 +82,10 @@ The following template uses a mix of secrets and configmaps to generate a vault 
 
 Ensure `konfd` is [running in the cluster](deployment-guide.md).
 
+```
+kubectl create -f replicasets/konfd.yaml
+```
+
 ### Add configuration data
 
 Create the `vault-secrets` secret:
