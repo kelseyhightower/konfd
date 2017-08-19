@@ -118,6 +118,7 @@ func (tp *TemplateProcessor) sync(configmaps []string) {
 			return
 		}
 		for _, c := range cmList.Items {
+			c := c
 			cms = append(cms, &c)
 		}
 	}
