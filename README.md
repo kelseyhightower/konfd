@@ -6,6 +6,22 @@ Manage application configuration using Kubernetes secrets, configmaps, and Go te
 
 ## Usage
 
+```
+Usage of konfd:
+```
+```
+  -configmap value
+    	the configmap to process.
+  -namespace value
+    	the namespace to process.
+  -noop
+    	print processed configmaps and secrets and do not submit them to the cluster.
+  -onetime
+    	run one time and exit.
+  -sync-interval duration
+    	the time duration between template processing. (default 1m0s)
+```
+
 ### Create configmaps and secrets
 
 ```
@@ -22,7 +38,7 @@ kubectl create configmap vault-configs \
 ### Create a template configmap
 
 ```
-cat configmaps/vault-template.yaml 
+cat configmaps/vault-template.yaml
 ```
 ```
 apiVersion: v1
