@@ -77,7 +77,11 @@ func getConfigMap(namespace, name string) (*ConfigMap, error) {
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, errors.New("non 200 response code")
+		data, err := readHTTPResponse(resp)
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("error getting config map; got HTTP %v status code and body (%s)", resp.StatusCode, data)
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
@@ -106,7 +110,11 @@ func getSecret(namespace, name string) (*Secret, error) {
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, errors.New("non 200 response code")
+		data, err := readHTTPResponse(resp)
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("error getting secret; got HTTP %v status code and body (%s)", resp.StatusCode, data)
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
@@ -132,7 +140,11 @@ func getConfigMaps(namespace string) (*ConfigMapList, error) {
 		return nil, err
 	}
 	if resp.StatusCode != 200 {
-		return nil, errors.New("non 200 response code")
+		data, err := readHTTPResponse(resp)
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("error updating config maps; got HTTP %v status code and body (%s)", resp.StatusCode, data)
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
@@ -192,7 +204,11 @@ func createConfigMap(c *ConfigMap) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 201 {
-		return fmt.Errorf("error creating configmap %s; got HTTP %v status code", c.Metadata.Name, resp.StatusCode)
+		data, err := readHTTPResponse(resp)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("error creating configmap %s; got HTTP %v status code and body (%s)", c.Metadata.Name, resp.StatusCode, data)
 	}
 
 	return nil
@@ -212,7 +228,11 @@ func createSecret(s *Secret) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 201 {
-		return fmt.Errorf("error creating secrets %s; got HTTP %v status code", s.Metadata.Name, resp.StatusCode)
+		data, err := readHTTPResponse(resp)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("error creating secrets %s; got HTTP %v status code and body (%s)", s.Metadata.Name, resp.StatusCode, data)
 	}
 
 	return nil
@@ -237,7 +257,11 @@ func updateConfigMap(c *ConfigMap) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("error updating configmap %s; got HTTP %v status code", c.Metadata.Name, resp.StatusCode)
+		data, err := readHTTPResponse(resp)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("error updating configmap %s; got HTTP %v status code and body (%s)", c.Metadata.Name, resp.StatusCode, data)
 	}
 
 	return nil
@@ -262,7 +286,11 @@ func updateSecret(s *Secret) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("error updating secret %s; got HTTP %v status code", s.Metadata.Name, resp.StatusCode)
+		data, err := readHTTPResponse(resp)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("error updating secret %s; got HTTP %v status code and body (%s)", s.Metadata.Name, resp.StatusCode, data)
 	}
 
 	return nil
@@ -274,7 +302,11 @@ func getNamespaces() (*NamespaceList, error) {
 		return nil, err
 	}
 	if resp.StatusCode != 200 {
-		return nil, errors.New("non 200 response code")
+		data, err := readHTTPResponse(resp)
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("error getting namespaces; got HTTP (%v) status code and body (%s)", resp.StatusCode, data)
 	}
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -301,4 +333,13 @@ func waitForKubernetesProxy() {
 		resp.Body.Close()
 		return
 	}
+}
+
+func readHTTPResponse(resp *http.Response) (string, error) {
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(bodyBytes), nil
 }
