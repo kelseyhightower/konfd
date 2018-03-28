@@ -65,6 +65,20 @@ type Metadata struct {
 	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
+func (c * ConfigMap) jsonMarshallIndentHtmlEscape() ([]byte, error) {
+	buffer := &bytes.Buffer{}
+	encoder := json.NewEncoder(buffer)
+	encoder.SetEscapeHTML(false)
+	err := encoder.Encode(c)
+	var buf bytes.Buffer
+	err = json.Indent(&buf, buffer.Bytes(), "", "")
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), err
+}
+
+
 func getConfigMap(namespace, name string) (*ConfigMap, error) {
 	u := fmt.Sprintf("http://127.0.0.1:8001/api/v1/namespaces/%s/configmaps/%s", namespace, name)
 	resp, err := http.Get(u)
@@ -178,8 +192,17 @@ func newSecret(namespace, name, key, value string) *Secret {
 	return s
 }
 
-func createConfigMap(c *ConfigMap) error {
-	body, err := json.MarshalIndent(&c, "", "  ")
+func createConfigMap(c *ConfigMap,escapeHtml bool) error {
+	if (escapeHtml == true){
+		body, err := json.MarshalIndent(&c, "", "  ")
+		return handleCreateConfigMap(c,body,err)
+	}else{
+		body, err := c.jsonMarshallIndentHtmlEscape()
+		return handleCreateConfigMap(c,body,err)
+	}
+}
+
+func handleCreateConfigMap(c *ConfigMap, body []byte, err error) error {
 	if err != nil {
 		return fmt.Errorf("error encoding configmap %s: %v", c.Metadata.Name, err)
 	}
@@ -194,12 +217,12 @@ func createConfigMap(c *ConfigMap) error {
 	if resp.StatusCode != 201 {
 		return fmt.Errorf("error creating configmap %s; got HTTP %v status code", c.Metadata.Name, resp.StatusCode)
 	}
-
 	return nil
 }
 
 func createSecret(s *Secret) error {
 	body, err := json.MarshalIndent(&s, "", "  ")
+
 	if err != nil {
 		return fmt.Errorf("error encoding secret %s: %v", s.Metadata.Name, err)
 	}
@@ -218,8 +241,18 @@ func createSecret(s *Secret) error {
 	return nil
 }
 
-func updateConfigMap(c *ConfigMap) error {
-	body, err := json.MarshalIndent(&c, "", "  ")
+func updateConfigMap(c *ConfigMap,escapeHtml bool) error {
+
+	if (escapeHtml == true){
+		body, err := json.MarshalIndent(&c, "", "  ")
+		return handleUpdateConfigMap(c,body,err)
+	}else{
+		body, err := c.jsonMarshallIndentHtmlEscape()
+		return handleUpdateConfigMap(c,body,err)
+	}
+}
+
+func handleUpdateConfigMap(c *ConfigMap, body []byte, err error) error{
 	if err != nil {
 		return fmt.Errorf("error encoding configmap %s: %v", c.Metadata.Name, err)
 	}
