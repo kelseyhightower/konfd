@@ -6,6 +6,7 @@ metadata:
     konfd.io/kind: configmap
     konfd.io/name: vault
     konfd.io/key:  server.hcl
+    konfd.io/escape-html: "true"
   labels:
     konfd.io/template: "true"
 data:

@@ -167,17 +167,22 @@ func (tp *TemplateProcessor) processConfigMapTemplate(configmap *ConfigMap) erro
 	name := annotations["konfd.io/name"]
 	key := annotations["konfd.io/key"]
 	kind := annotations["konfd.io/kind"]
+	escapeHtmlStr := annotations["konfd.io/escape-html"]
+	escapeHtml :=true
+	if escapeHtmlStr == "false" {
+		escapeHtml=false
+	}
 
 	switch kind {
 	case "configmap":
-		return tp.processConfigMap(tp.namespace, name, key, value.String())
+		return tp.processConfigMap(tp.namespace, name, key, value.String(),escapeHtml)
 	case "secret":
 		return tp.processSecret(tp.namespace, name, key, value.String())
 	}
 	return nil
 }
 
-func (tp *TemplateProcessor) processConfigMap(namespace, name, key, value string) error {
+func (tp *TemplateProcessor) processConfigMap(namespace, name, key, value string, escapeHtml bool) error {
 	cm := newConfigMap(namespace, name, key, value)
 
 	ccm, err := getConfigMap(namespace, name)
@@ -185,7 +190,7 @@ func (tp *TemplateProcessor) processConfigMap(namespace, name, key, value string
 		if tp.noop {
 			return printObject(cm)
 		}
-		return createConfigMap(cm)
+		return createConfigMap(cm,escapeHtml)
 	}
 
 	if err != nil {
@@ -200,7 +205,7 @@ func (tp *TemplateProcessor) processConfigMap(namespace, name, key, value string
 	if tp.noop {
 		return printObject(ccm)
 	}
-	return updateConfigMap(ccm)
+	return updateConfigMap(ccm,escapeHtml)
 }
 
 func (tp *TemplateProcessor) processSecret(namespace, name, key, value string) error {
